@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mini Flappy Bird</title>
+<style>
+  body { margin: 0; background:#87ceeb; }
+  canvas { display:block; margin:0 auto; background:#87ceeb; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const GRAVITY = 0.5;
+const FLAP_STRENGTH = -8;
+const BIRD_X = 60;
+const PIPE_WIDTH = 50;
+const PIPE_GAP = 150;
+
+let birdY, birdVelocity, pipes, frame, score, running;
+
+function reset() {
+  birdY = canvas.height / 2;
+  birdVelocity = 0;
+  pipes = [];
+  frame = 0;
+  score = 0;
+  running = true;
+}
+
+function flap() {
+  birdVelocity = FLAP_STRENGTH;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') flap();
+});
+
+function gameLoop() {
+  if (!running) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  birdVelocity += GRAVITY;
+  birdY += birdVelocity;
+  if (birdY + 12 > canvas.height || birdY - 12 < 0) {
+    running = false;
+  }
+
+  ctx.fillStyle = 'yellow';
+  ctx.fillRect(BIRD_X - 12, birdY - 12, 24, 24);
+
+  if (frame % 90 === 0) {
+    const gapY = Math.floor(Math.random() * (canvas.height - PIPE_GAP - 40)) + 20;
+    pipes.push({ x: canvas.width, gapY, passed: false });
+  }
+
+  pipes.forEach(p => {
+    p.x -= 2;
+    ctx.fillStyle = 'green';
+    ctx.fillRect(p.x, 0, PIPE_WIDTH, p.gapY);
+    ctx.fillRect(p.x, p.gapY + PIPE_GAP, PIPE_WIDTH, canvas.height - p.gapY - PIPE_GAP);
+
+    if (BIRD_X + 12 > p.x && BIRD_X - 12 < p.x + PIPE_WIDTH) {
+      if (birdY - 12 < p.gapY || birdY + 12 > p.gapY + PIPE_GAP) {
+        running = false;
+      }
+    }
+
+    if (!p.passed && p.x + PIPE_WIDTH < BIRD_X) {
+      p.passed = true;
+      score += 1;
+    }
+  });
+
+  ctx.fillStyle = 'black';
+  ctx.font = '20px sans-serif';
+  ctx.fillText('Score: ' + score, 10, 30);
+
+  frame++;
+  if (running) {
+    requestAnimationFrame(gameLoop);
+  } else {
+    ctx.fillStyle = 'black';
+    ctx.font = '30px sans-serif';
+    ctx.fillText('Game Over', canvas.width / 2 - 75, canvas.height / 2);
+  }
+}
+
+reset();
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
